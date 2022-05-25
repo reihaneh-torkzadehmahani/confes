@@ -74,14 +74,14 @@ def main():
     stats_train = {'train_acc': [], 'train_lss': []}
 
     if args.dataset == 'cifar10':
-        warm_up = 10
+        warm_up = 15
         args.gradual = warm_up
         if args.noise_rate == 0.3:
-            a1 = 0.5
+            a1 = 0.55
         elif args.noise_rate == 0.4:
             a1 = 0.45
         elif args.noise_rate == 0.5:
-            a1 = 0.3
+            a1 = 0.35
         a2 = args.noise_rate + 0.05
 
     elif args.dataset == 'cifar100':
