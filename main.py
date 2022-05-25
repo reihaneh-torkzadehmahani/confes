@@ -39,9 +39,9 @@ def save_stats(stats_array,
                path_base,
                path_dict):
     PATH = path_base + 'stats_'
-    os.makedirs(PATH, exist_ok=True)
     for key in path_dict:
         PATH += key + '_' + str(path_dict[key]) + '_'
+    os.makedirs(PATH, exist_ok=True)
     torch.save(stats_array, PATH)
     print("Saved stats in {} ".format(PATH))
 
