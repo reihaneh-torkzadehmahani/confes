@@ -14,4 +14,7 @@ Then, you can run CONFES:
 python3 main.py --dataset cifar100 --noise-rate 0.4 
 ```
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> a9157172f42934f0c122a847e8af6e958d229067
