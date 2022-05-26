@@ -25,23 +25,23 @@ parser.add_argument("--pretrain", type=bool, default=False, help="use pretrained
 parser.add_argument("--optimizer", type=str, default='sgd', metavar="OPT", help="optimizer")
 parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="SGD momentum")
 parser.add_argument("--lr", type=float, default=0.02, metavar="LR", help="learning rate")
-parser.add_argument("--epochs", type=int, default=1, metavar="N", help="number of training epochs")
+parser.add_argument("--epochs", type=int, default=300, metavar="N", help="number of training epochs")
 parser.add_argument("--epoch-decay-start", type=int, default=[1000], metavar="N", help="begining of decay")
 parser.add_argument("--gamma", type=int, default=0.1, metavar="N", help="gamma for lr scheduler")
 parser.add_argument("--weight-decay", default=5e-4, type=float, metavar="WD", help="optimizer weight decay")
 
-noise_multiplier = None,
-max_l2_norm = None,
 
 args = parser.parse_args()
 device = torch.device(args.device)
+
 def save_stats(stats_array,
                path_base,
                path_dict):
+
+    os.makedirs(path_base, exist_ok=True)
     PATH = path_base + 'stats_'
     for key in path_dict:
         PATH += key + '_' + str(path_dict[key]) + '_'
-    os.makedirs(PATH, exist_ok=True)
     torch.save(stats_array, PATH)
     print("Saved stats in {} ".format(PATH))
 
