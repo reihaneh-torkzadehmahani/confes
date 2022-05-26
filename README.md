@@ -11,10 +11,6 @@ pip3 install -r requirements.txt  -f https://download.pytorch.org/whl/torch_stab
 Then, you can run CONFES:
 
 ```
-python3 main.py --dataset cifar100 --noise-rate 0.4 
+python3 main.py --dataset cifar100 --model preact-resnet18 --lr 0.02 --weight-decay 5e-4 --batch-size 128  --epochs 300 --noise-rate 0.5
 ```
 
-<<<<<<< HEAD
-
-=======
->>>>>>> a9157172f42934f0c122a847e8af6e958d229067

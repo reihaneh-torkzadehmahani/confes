@@ -30,7 +30,6 @@ parser.add_argument("--epoch-decay-start", type=int, default=[1000], metavar="N"
 parser.add_argument("--gamma", type=int, default=0.1, metavar="N", help="gamma for lr scheduler")
 parser.add_argument("--weight-decay", default=5e-4, type=float, metavar="WD", help="optimizer weight decay")
 
-
 args = parser.parse_args()
 device = torch.device(args.device)
 
@@ -74,25 +73,27 @@ def main():
     stats_train = {'train_acc': [], 'train_lss': []}
 
     if args.dataset == 'cifar10':
-        warm_up = 15
-        args.gradual = warm_up
+        t_g = 15
         if args.noise_rate == 0.3:
             a1 = 0.55
         elif args.noise_rate == 0.4:
             a1 = 0.45
         elif args.noise_rate == 0.5:
             a1 = 0.35
+        elif args.noise_rate == 0.6:
+            a1 = 0.25
         a2 = args.noise_rate + 0.05
 
     elif args.dataset == 'cifar100':
-        warm_up = 10
-        args.gradual = warm_up
+        t_g = 10
         if args.noise_rate == 0.3:
             a1 = 0.45
         elif args.noise_rate == 0.4:
             a1 = 0.4
         elif args.noise_rate == 0.5:
             a1 = 0.35
+        elif args.noise_rate == 0.6:
+            a1 = 0.3
         a2 = args.noise_rate + 0.05
 
     elif args.dataset == 'clothing1m':
@@ -100,7 +101,7 @@ def main():
         a1 = 0.45
         a2 = args.noise_rate
 
-    linear_noise_rate = np.linspace(a1, a2, warm_up)
+    linear_noise_rate = np.linspace(a1, a2, t_g)
     print('Linear space for sieving threshold is {}'.format(linear_noise_rate))
 
     for epoch in range(args.epochs):
@@ -109,7 +110,7 @@ def main():
         dataset.train_dataloader = torch.utils.data.DataLoader(dataset=dataset.train_set,
                                                                batch_size=args.batch_size,
                                                                sampler=train_sampler)
-        if epoch < warm_up:
+        if epoch < t_g:
             epoch_noise_rate = linear_noise_rate[epoch]
         else:
             epoch_noise_rate = linear_noise_rate[-1]
@@ -120,7 +121,7 @@ def main():
 
         np.random.shuffle(clean_labels_epoch)
         selected_idx = clean_labels_epoch
-        if epoch <= warm_up:
+        if epoch <= t_g:
             aug_n = int(len(noisy_labels_epoch))
 
         else:
