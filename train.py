@@ -62,7 +62,7 @@ def train_one_epoch(model,
         output = model(image)
 
         all_pred_labels = np.append(all_pred_labels, output.argmax(dim=1, keepdim=True).detach().cpu().data)
-        loss = F.cross_entropy(output, label.to(torch.long).cuda())
+        loss = F.cross_entropy(output, label.cuda())
 
         losses.append(loss.item())
         loss.backward()
@@ -135,19 +135,24 @@ def test_one_epoch(model,
     return test_metrics
 
 # ----------------------------------------------------------------------------------------------------------------
-def eval_train(model, data_loader, sample_size, noise_rate, num_classes):
+def eval_train(model, data_loader, sample_size, alpha, num_classes):
     label_pred = np.empty(sample_size)
     label_pred[:] = np.nan
     probs = np.empty((sample_size, num_classes))
     probs[:] = np.nan
     per_sample_ce = np.empty(sample_size)
     per_sample_ce[:] = np.nan
+    small_ce = []
+    large_ce = []
 
     var_output_dataset = np.ones(sample_size).tolist()
     with torch.no_grad():
         for image, label, index in data_loader:
             output = model(image.cuda())
             y_pred = F.softmax(output, dim=1)
+                    
+            y_pred = torch.clamp(y_pred, 1e-4, 1.0 - 1e-4)
+
             loss_ce = F.cross_entropy(output.cpu(), label, reduction='none')
             var_output_batch = [(float(y_pred[index_local].max() - y_pred[index_local][label[index_local]])) for
                                 index_local in range(len(y_pred))]
@@ -157,12 +162,14 @@ def eval_train(model, data_loader, sample_size, noise_rate, num_classes):
                 label_pred[g_i] = output.argmax(dim=1, keepdim=True)[l_i]
                 probs[g_i] = y_pred[l_i].cpu().detach()
                 per_sample_ce[g_i] = loss_ce[l_i].cpu().detach()
+                if var_output_dataset[g_i] <= alpha:
+                    small_ce.append(g_i)
+                else:
+                    large_ce.append(g_i)
 
-        dataset_idx_sorted = torch.argsort(torch.Tensor(var_output_dataset))
-        remember_rate = 1 - noise_rate
-        num_remember = int(remember_rate * len(dataset_idx_sorted))
 
-        clean_labels_epoch = dataset_idx_sorted[0:num_remember]
-        noisy_labels_epoch = dataset_idx_sorted[num_remember:]
+        clean_labels_epoch = torch.LongTensor(small_ce)
+        noisy_labels_epoch = torch.LongTensor(large_ce)
 
         return clean_labels_epoch, noisy_labels_epoch, label_pred, torch.tensor(probs), per_sample_ce
+

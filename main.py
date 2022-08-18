@@ -10,7 +10,7 @@ from torch.utils.data import SubsetRandomSampler
 # --------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='Training DNNs on Imag Datasets')
 parser.add_argument("--device", type=str, default="cuda", metavar="D", help="GPU ID")
-parser.add_argument("--dataset", type=str, default="cifar10", help="dataset name")
+parser.add_argument("--dataset", type=str, default="cifar100", help="dataset name")
 parser.add_argument("--data-dir", type=str, default="./data", help="data directory(./data)")
 
 parser.add_argument("--noise-type", type=str, default='instance', help="type of label noise")
@@ -32,6 +32,8 @@ parser.add_argument("--weight-decay", default=5e-4, type=float, metavar="WD", he
 
 args = parser.parse_args()
 device = torch.device(args.device)
+
+alpha_schedule = np.zeros(args.epochs)
 
 def save_stats(stats_array,
                path_base,
@@ -73,36 +75,18 @@ def main():
     stats_train = {'train_acc': [], 'train_lss': []}
 
     if args.dataset == 'cifar10':
-        t_g = 15
-        if args.noise_rate == 0.3:
-            a1 = 0.55
-        elif args.noise_rate == 0.4:
-            a1 = 0.45
-        elif args.noise_rate == 0.5:
-            a1 = 0.35
-        elif args.noise_rate == 0.6:
-            a1 = 0.25
-        a2 = args.noise_rate + 0.05
+        T_w = 25
+        init_alpha = 0.1
 
     elif args.dataset == 'cifar100':
-        t_g = 10
-        if args.noise_rate == 0.3:
-            a1 = 0.45
-        elif args.noise_rate == 0.4:
-            a1 = 0.4
-        elif args.noise_rate == 0.5:
-            a1 = 0.35
-        elif args.noise_rate == 0.6:
-            a1 = 0.3
-        a2 = args.noise_rate + 0.05
+        T_w = 30
+        init_alpha = 0.2
 
     elif args.dataset == 'clothing1m':
-        warm_up = 3
-        a1 = 0.45
-        a2 = args.noise_rate
+        T_1 = 3
+        init_alpha = 0.03
 
-    linear_noise_rate = np.linspace(a1, a2, t_g)
-    print('Linear space for sieving threshold is {}'.format(linear_noise_rate))
+    alpha_schedule[0:T_w] = np.linspace(init_alpha, 0, T_w)
 
     for epoch in range(args.epochs):
         all_idx = np.arange(0, args.num_samples)
@@ -110,22 +94,19 @@ def main():
         dataset.train_dataloader = torch.utils.data.DataLoader(dataset=dataset.train_set,
                                                                batch_size=args.batch_size,
                                                                sampler=train_sampler)
-        if epoch < t_g:
-            epoch_noise_rate = linear_noise_rate[epoch]
-        else:
-            epoch_noise_rate = linear_noise_rate[-1]
+        epoch_alpha = alpha_schedule[epoch]
+        print('Current sieving threshold is {}'.format(epoch_alpha))
+
 
         clean_labels_epoch, noisy_labels_epoch, predicted_labels, predicted_probs, per_sample_loss = eval_train(
-            net.model, dataset.train_dataloader, args.num_samples, epoch_noise_rate, dataset.num_classes)
+            net.model, dataset.train_dataloader, args.num_samples, epoch_alpha, dataset.num_classes)
 
 
         np.random.shuffle(clean_labels_epoch)
         selected_idx = clean_labels_epoch
-        if epoch <= t_g:
-            aug_n = int(len(noisy_labels_epoch))
+        
+        aug_n = int(len(noisy_labels_epoch))
 
-        else:
-            aug_n = int(len(noisy_labels_epoch))
         if aug_n < len(clean_labels_epoch):
             new_selected_idx = torch.cat((selected_idx, selected_idx[0:aug_n]))
         else:

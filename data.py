@@ -31,8 +31,8 @@ class Dataset:
         if self.dataset_name == "cifar10":
             cifar_mean = [0.4914, 0.4822, 0.4465]
             cifar_std = [0.2023, 0.1994, 0.2010]
-            transform_pipe = [transforms.RandomCrop(32, 4),
-                              transforms.RandomHorizontalFlip(),
+            transform_pipe = [transforms.RandomHorizontalFlip(),
+                              transforms.RandomCrop(32, 4),
                               transforms.ToTensor(),
                               transforms.Normalize(cifar_mean, cifar_std)]
 
@@ -125,10 +125,14 @@ class Dataset:
 
         elif self.noise_type == "instance":
             noise_matrix = self.compute_noise_transition_instance()
+        
+        elif self.noise_type == "pairflip":
+            noise_matrix = self.compute_noise_transition_pairflip()
+
 
         print('Size of noise transition matrix: {}'.format(noise_matrix.shape))
 
-        if self.noise_type == "symmetric":
+        if self.noise_type == "symmetric" or self.noise_type == "pairflip":
             assert noise_matrix.shape[0] == noise_matrix.shape[1]
             assert np.max(clean_labels_np) < noise_matrix.shape[0]
             assert_array_almost_equal(noise_matrix.sum(axis=1), np.ones(noise_matrix.shape[1]))
@@ -195,6 +199,22 @@ class Dataset:
             noise_matrix.append(A)
         noise_matrix = torch.stack(noise_matrix, 0).cpu().numpy()
         return noise_matrix
+
+    # ------------------------------------------------------------------------------------------------------------------
+    #https://github.com/tmllab/PES/blob/54662382dca22f314911488d79711cffa7fbf1a0/common/NoisyUtil.py
+    def compute_noise_transition_pairflip(self):
+
+        noise_matrix = np.eye(self.num_classes)
+
+        if self.noise_rate > 0.0:
+            # 0 -> 1
+            noise_matrix[0, 0], noise_matrix[0,1] = 1. - self.noise_rate, self.noise_rate
+            for i in range(1, self.num_classes - 1):
+                noise_matrix[i, i], noise_matrix[i, i+1] = 1. - self.noise_rate, self.noise_rate
+            noise_matrix[self.num_classes - 1, self.num_classes - 1], noise_matrix[self.num_classes-1, 0] = 1. - self.noise_rate, self.noise_rate
+            # print(noise_matrix)
+        return noise_matrix
+
 
     # ------------------------------------------------------------------------------------------------------------------
     def split_into_batches(self, batch_size, train_sampler=None):
