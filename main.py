@@ -26,8 +26,7 @@ parser.add_argument("--optimizer", type=str, default='sgd', metavar="OPT", help=
 parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="SGD momentum")
 parser.add_argument("--lr", type=float, default=0.02, metavar="LR", help="learning rate")
 parser.add_argument("--epochs", type=int, default=300, metavar="N", help="number of training epochs")
-parser.add_argument("--epoch-decay-start", type=int, default=[1000], metavar="N", help="begining of decay")
-parser.add_argument("--gamma", type=int, default=0.1, metavar="N", help="gamma for lr scheduler")
+parser.add_argument("--gamma", type=int, default=0.01, metavar="N", help="gamma for lr scheduler")
 parser.add_argument("--weight-decay", default=5e-4, type=float, metavar="WD", help="optimizer weight decay")
 
 args = parser.parse_args()
@@ -66,7 +65,6 @@ def main():
                                          model=model,
                                          learning_rate=args.lr,
                                          all_epochs=args.epochs,
-                                         epoch_decay_start=args.epoch_decay_start,
                                          gamma=args.gamma,
                                          momentum=args.momentum,
                                          weight_decay=args.weight_decay)

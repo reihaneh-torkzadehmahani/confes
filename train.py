@@ -16,7 +16,6 @@ def set_optimizer(optimizer_name,
                   model,
                   learning_rate,
                   all_epochs,
-                  epoch_decay_start,
                   gamma,
                   momentum=0.9,
                   weight_decay=1e-3):
@@ -28,11 +27,11 @@ def set_optimizer(optimizer_name,
         optimizer = optim.SGD(model_params, learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     if dataset_name == 'cifar10' or dataset_name == 'cifar100':
-        scheduler = CosineAnnealingLR(optimizer, all_epochs, learning_rate / 100, verbose = True)
+        scheduler = CosineAnnealingLR(optimizer, all_epochs, learning_rate * gamma, verbose = True)
         print('Set learning rate scheduler to CosineAnnealingLR')
 
     elif dataset_name == 'clothing1m':
-        scheduler = MultiStepLR(optimizer, milestones=epoch_decay_start, gamma=gamma, verbose=True)
+        scheduler = MultiStepLR(optimizer, milestones=40, gamma=gamma, verbose=True)
         print('Set learning rate scheduler to MultiStepLR')
     return optimizer, scheduler
 
