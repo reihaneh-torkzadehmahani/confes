@@ -20,7 +20,7 @@ class Net:
             input_last_layer = self.model.fc.in_features
             self.model.fc = nn.Linear(input_last_layer, num_classes)
 
-        print('Created model {}'.format(model_name))
+        print('Initializing  model {}'.format(model_name))
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Taken from https://github.com/shengliu66/ELR/blob/master/ELR_plus/model/PreResNet.py
@@ -30,7 +30,6 @@ def conv3x3(in_planes, out_planes, stride=1):
 class PreActBlock(nn.Module):
     '''Pre-activation version of the BasicBlock.'''
     expansion = 1
-
     def __init__(self, in_planes, planes, stride=1):
         super(PreActBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
@@ -43,7 +42,6 @@ class PreActBlock(nn.Module):
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False)
             )
-
     def forward(self, x):
         out = F.relu(self.bn1(x))
         shortcut = self.shortcut(out)
